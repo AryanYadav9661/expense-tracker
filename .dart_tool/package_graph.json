@@ -12,6 +12,7 @@
         "firebase_core",
         "fl_chart",
         "flutter",
+        "flutter_lints",
         "google_mobile_ads",
         "intl",
         "provider",
@@ -639,6 +640,18 @@
         "string_scanner",
         "term_glyph"
       ]
+    },
+    {
+      "name": "flutter_lints",
+      "version": "2.0.3",
+      "dependencies": [
+        "lints"
+      ]
+    },
+    {
+      "name": "lints",
+      "version": "2.1.1",
+      "dependencies": []
     }
   ],
   "configVersion": 1
