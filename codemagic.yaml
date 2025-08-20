@@ -1,0 +1,54 @@
+
+workflows:
+  build-debug-apk:
+    name: Build debug APK (safe for Codemagic)
+    max_build_duration: 60
+    environment:
+      flutter: stable
+      xcode: default
+    scripts:
+      - name: Verify environment
+        script: |
+          set -e
+          echo "Flutter version and doctor output:"
+          flutter --version
+          flutter doctor -v
+      - name: Quick sanity checks (avoid Android v1 embedding errors)
+        script: |
+          set -e
+          echo "Checking Android embedding / MainActivity..."
+          # check MainActivity for common v1 embedding patterns
+          MAIN_ACT="android/app/src/main/kotlin"
+          if [ -d "$MAIN_ACT" ]; then
+            FOUND=$(grep -R "io.flutter.app" -n "$MAIN_ACT" || true)
+            if [ -n "$FOUND" ]; then
+              echo "ERROR: Found references to v1 embedding (io.flutter.app) in your Android Kotlin files:" >&2
+              echo "$FOUND" >&2
+              echo "Please migrate to Flutter embedding v2 (use io.flutter.embedding.android.FlutterActivity)" >&2
+              exit 1
+            else
+              echo "No v1 embedding keywords found in Kotlin sources."
+            fi
+          else
+            echo "Warning: $MAIN_ACT not found. Ensure your project contains Kotlin MainActivity under app/src/main/kotlin/."
+          fi
+      - name: Decode google-services.json (if provided as base64 env var)
+        script: |
+          set -e
+          if [ -n "$GOOGLE_SERVICES_JSON_BASE64" ]; then
+            echo "Decoding google-services.json..."
+            printf '%s' "$GOOGLE_SERVICES_JSON_BASE64" | base64 --decode > android/app/google-services.json
+          else
+            echo "GOOGLE_SERVICES_JSON_BASE64 not set — skipping"
+          fi
+      - name: Install dependencies
+        script: |
+          set -e
+          flutter pub get
+      - name: Build debug apk
+        script: |
+          set -e
+          flutter clean || true
+          flutter build apk --debug --target-platform android-arm,android-arm64,android-x64
+    artifacts:
+      - build/app/outputs/flutter-apk/app-debug.apk
